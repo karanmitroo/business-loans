@@ -1,0 +1,32 @@
+[{
+		"p1": [{
+				"id": 1,
+				"Question": "What is the age of your business?"
+			},
+			{
+				"id": 2,
+				"Question": "What is the loan amount that you need?"
+			},
+			{
+				"id": 3,
+				"Question": "What was your last year's revenue?"
+			}
+		]
+	},
+	{
+		"p1": [{
+				"id": 1,
+
+				"Question": "Enter your PAN card Number?"
+			},
+			{
+				"id": 2,
+				"Question": "What is your sector of Business?"
+			},
+			{
+				"id": 3,
+				"Question": "Enter the Pin Code of your office/factory."
+			}
+		]
+	}
+]
