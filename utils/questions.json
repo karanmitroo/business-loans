@@ -20,7 +20,7 @@
 		]
 	},
 	{
-		"p1": [{
+		"p2": [{
 				"id": 1,
 				"question": "Enter your PAN card Number?",
 				"return_type":"",
@@ -30,6 +30,7 @@
 				"id": 2,
 				"question": "What is your sector of Business?",
 				"return_type":"option",
+				"options":["Agriculture","Finance","Retail","Medical Research","Infrastructure"],
 				"regex":""
 			},
 			{
