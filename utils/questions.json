@@ -23,7 +23,7 @@
 		"p2": [{
 				"id": 1,
 				"question": "Enter your PAN card Number?",
-				"return_type":"",
+				"return_type":"regex",
 				"regex":"[a-zA-Z]{5}[0-9]{4}[a-zA-Z]"
 			},
 			{
@@ -36,7 +36,7 @@
 			{
 				"id": 3,
 				"question": "Enter the Pin Code of your office/factory.",
-				"return_type":"",
+				"return_type":"regex",
 				"regex":"[0-9]{6}"
 			}
 		]
