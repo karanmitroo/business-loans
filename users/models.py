@@ -22,7 +22,7 @@ class CompanyData(models.Model):
     misc_data = JSONField(default=dict)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    amount_requested = models.IntegerField(max_length=2)
+    amount_requested = models.IntegerField()
 
     Agri = 'Agri'
     Fin = 'Fin'
