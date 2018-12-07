@@ -2,7 +2,7 @@ import re
 
 import pandas as pd
 
-class ParseTable(object):
+class ParseTable:
 
     def __init__(self, table_path):
         self.table = pd.read_csv(table_path, keep_default_na=False, dtype=str)
@@ -22,7 +22,7 @@ class ParseTable(object):
                 self.table.rename(columns={each_column_name: each_column_name.lower()}, inplace=True)
 
 
-class EvalMethod(object):
+class EvalMethod:
 
     @staticmethod
     def equal(new_data, existing_data):
@@ -60,7 +60,7 @@ class EvalMethod(object):
             return eval(str(new_data) + existing_data)
 
 
-class SequentialMatch(object):
+class SequentialMatch:
 
     def __init__(self, parse_table_path, dict_condition):
         self.table_obj = ParseTable(parse_table_path)

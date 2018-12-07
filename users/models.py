@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 
@@ -21,3 +22,18 @@ class CompanyData(models.Model):
     misc_data = JSONField(default=dict)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    Agri = 'Agri'
+    Fin = 'Fin'
+    Retail = 'Retail'
+    Med = 'Med'
+    Infra = 'Infra'
+    Oth = 'Oth'
+    SECTOR_CHOICES = (
+        (Agri, settings.SECTORS[0]),
+        (Fin, settings.SECTORS[1]),
+        (Retail, settings.SECTORS[2]),
+        (Med, settings.SECTORS[3]),
+        (Infra, settings.SECTORS[4]),
+        (Oth,settings.SECTORS[5]))
+    sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)
