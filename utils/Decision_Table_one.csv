@@ -1,4 +1,4 @@
-Age [range],Revenue [range],Loan Amount [range],Status
+Age [range],Revenue [range],Amount Requested [range],Status
 <2,<20,<20,FALSE
 2|5,<20,<20,TRUE
 >5,<20,<20,TRUE
