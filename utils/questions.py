@@ -1,4 +1,6 @@
-[{
+from django.conf import settings
+
+QUESTIONS_FOR_ELIGIBILITY = {
 		"p1": [{
 				"id": 1,
 				"question": "What is the age of your business?",
@@ -17,9 +19,7 @@
 				"return_type": "integer",
 				"regex":""
 			}
-		]
-	},
-	{
+		],
 		"p2": [{
 				"id": 1,
 				"question": "Enter your PAN card Number?",
@@ -30,7 +30,7 @@
 				"id": 2,
 				"question": "What is your sector of Business?",
 				"return_type":"option",
-				"options":["Agriculture","Finance","Retail","Medical Research","Infrastructure"],
+				"options": settings.SECTORS,
 				"regex":""
 			},
 			{
@@ -41,4 +41,3 @@
 			}
 		]
 	}
-]
