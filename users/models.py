@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
-from business_loans.settings import SECTORS
+from django.conf import settings
 # Create your models here.
 
 class UserData(models.Model):
@@ -29,10 +29,10 @@ class CompanyData(models.Model):
     Infra = 'Infra'
     Oth = 'Oth'
     SECTOR_CHOICES = (
-        (Agri, SECTORS[0]),
-        (Fin, SECTORS[1]),
-        (Retail, SECTORS[2]),
-        (Med, SECTORS[3]),
-        (Infra, SECTORS[4]),
-        (Oth,SECTORS[5]),)
+        (Agri, settings.SECTORS[0]),
+        (Fin, settings.SECTORS[1]),
+        (Retail, settings.SECTORS[2]),
+        (Med, settings.SECTORS[3]),
+        (Infra, settings.SECTORS[4]),
+        (Oth,settings.SECTORS[5]),)
     sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)

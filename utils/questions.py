@@ -1,4 +1,4 @@
-from business_loans.settings import SECTORS
+from django.conf import settings
 
 QUESTIONS_FOR_ELIGIBILITY = {
 		"p1": [{
@@ -30,7 +30,7 @@ QUESTIONS_FOR_ELIGIBILITY = {
 				"id": 2,
 				"question": "What is your sector of Business?",
 				"return_type":"option",
-				"options": SECTORS,
+				"options": settings.SECTORS,
 				"regex":""
 			},
 			{
