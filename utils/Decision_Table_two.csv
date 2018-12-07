@@ -1,0 +1,55 @@
+CIBIL Rank [range],Sector [equal],Location [equal],Score
+<5,Agriclture,Urban ,0
+5|7,Agriclture,Urban ,0
+>8,Agriclture,Urban ,0
+<5,Agriclture,Semi-Urban,6
+5|7,Agriclture,Semi-Urban,3
+>8,Agriclture,Semi-Urban,1
+<5,Agriclture,Rural,3
+5|7,Agriclture,Rural,1
+>8,Agriclture,Rural,0
+<5,Retail,Urban ,9
+5|7,Retail,Urban ,6
+>8,Retail,Urban ,3
+<5,Retail,Semi-Urban,6
+5|7,Retail,Semi-Urban,3
+>8,Retail,Semi-Urban,1
+<5,Retail,Rural,3
+5|7,Retail,Rural,1
+>8,Retail,Rural,0
+<5,Medical Research,Urban ,9
+5|7,Medical Research,Urban ,6
+>8,Medical Research,Urban ,3
+<5,Medical Research,Semi-Urban,6
+5|7,Medical Research,Semi-Urban,3
+>8,Medical Research,Semi-Urban,1
+<5,Medical Research,Rural,3
+5|7,Medical Research,Rural,2
+>8,Medical Research,Rural,1
+<5,Infrastructure,Urban ,9
+5|7,Infrastructure,Urban ,7
+>8,Infrastructure,Urban ,5
+<5,Infrastructure,Semi-Urban,8
+5|7,Infrastructure,Semi-Urban,6
+>8,Infrastructure,Semi-Urban,4
+<5,Infrastructure,Rural,3
+5|7,Infrastructure,Rural,2
+>8,Infrastructure,Rural,1
+<5,Finance,Urban ,10
+5|7,Finance,Urban ,8
+>8,Finance,Urban ,6
+<5,Finance,Semi-Urban,6
+5|7,Finance,Semi-Urban,4
+>8,Finance,Semi-Urban,2
+<5,Finance,Rural,3
+5|7,Finance,Rural,2
+>8,Finance,Rural,0
+<5,Others,Urban ,6
+5|7,Others,Urban ,3
+>8,Others,Urban ,1
+<5,Others,Semi-Urban,3
+5|7,Others,Semi-Urban,2
+>8,Others,Semi-Urban,1
+<5,Others,Rural,0
+5|7,Others,Rural,0
+>8,Others,Rural,0
