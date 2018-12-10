@@ -1,16 +1,18 @@
 import os
+import uuid
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework.authentication import (BasicAuthentication,
                                            SessionAuthentication)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from users.models import CompanyData, UserData
+from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
-from users.utils import COMPANY_DATA_QUESTIONS_MAPPING
 from utils.questions import QUESTIONS_FOR_ELIGIBILITY
 
 
@@ -30,14 +32,19 @@ class Register(APIView):
         """ Will be called when a user tries to register to the platform """
         username = request.data.get('username')
         password = request.data.get('password')
+        email = request.data.get('email')
 
-        # Check if any other user with the same username does NOT already exists.
-        if User.objects.filter(username=username).exists():
+        # Check if any other user with the same username or email does NOT already exists.
+        if User.objects.filter(Q(username=username) | Q(email=email)).exists():
             # If the user already exists, then ask them to login rather registering.
-            return Response("User Already exists")
+            return Response({
+                "status" : "nok",
+                "response" : "User Already Exists"
+            })
 
         # Else register and signin the user.
         user_obj = User.objects.create(username=username)
+        user_obj.email = email
         user_obj.set_password(password)
         user_obj.save()
 
@@ -47,13 +54,39 @@ class Register(APIView):
 
         # Also create the other models required further.
         cls.create_userdata(authenticated_user)
+
+        # Add any anonymous data to this actual users data
+        cls.add_anon_data_to_userdata(request.data.get('uuid'), user_obj)
+
         return Response("Thanks for logging in")
 
 
     @classmethod
     def create_userdata(cls, user_obj):
         """ To create a userdata object as and when a new user registers to the platform. """
-        UserData.objects.get_or_create(user=user_obj)
+        user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
+        user_data_obj.session_data['current_state'] = 'eligibility_check'
+        user_data_obj.save()
+
+    @classmethod
+    def add_anon_data_to_userdata(cls, identifier, user_obj):
+        """ To fetch anonymous data from AnonData model and save it for any actual user """
+
+        anon_data = AnonData.objects.get(identifier=identifier)
+
+        # Saving the fetched anonymous data to data of a known user.
+        _ = CompanyData.objects.create(
+            business=user_obj,
+            revenue=anon_data.data['revenue'],
+            amount_requested=anon_data.data['amount_requested'],
+            date_of_registration=timezone.datetime(
+                year=int(anon_data.data['year_of_registration']),
+                month=1,
+                day=1)
+            )
+
+        # Since anonymous data has been saved, there is no use of keeping it the anonymous table.
+        anon_data.delete()
 
 
 class Login(APIView):
@@ -63,6 +96,7 @@ class Login(APIView):
 
     @classmethod
     def post(cls, request):
+
         """ Will be called when a user tries to login to the platform """
         username = request.data.get('username')
         password = request.data.get('password')
@@ -72,9 +106,18 @@ class Login(APIView):
         # If user_obj found, means username and password are correct, then log in the user.
         if user_obj is not None:
             login(request, user_obj)
-            return Response("Logged In")
+            user_data_obj = UserData.objects.get(user=user_obj)
 
-        return Response("Sorry, Incorrect username/ password entered.")
+            # Login the user and send the current state where the user is present.
+            return Response({
+                "status" : "ok",
+                "current_state" : user_data_obj.session_data['current_state']
+            })
+
+        return Response({
+            "status" : "nok",
+            "response" : "Wrong Username/ Password. Please Try again."
+        })
 
 
 class UserForm(APIView):
@@ -102,34 +145,54 @@ class Eligibility(APIView):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     @classmethod
-    def get(cls, request):
+    def post(cls, request):
         """
         Will be called to check eligibility for a company before getting them registering
         to the platform.
         """
-        query_params = request.query_params
+        request_data = request.data
 
-        # Getting the business_model object here to add data to it and then check for eligibility.
-        company_data_obj = CompanyData.objects.get(business=request.user)
+        # We have got a lot of data here but do NOT know who the user is.
+        # So currently saving the data as Anonymous data and sending a uuid token
+        # to the frontend which will be retrieved at time of registering.
+        # Matching this uuid will get us the user for which the data was collected.
+        uuid_generated = uuid.uuid4()
+        anon_data = {
+            "year_of_registration" : request_data.get('year_of_registration'),
+            "revenue" : request_data.get('revenue'),
+            "amount_requested": request_data.get('amount')
+        }
 
-        # Dynamically saving data to the company_data object using the setattr method.
-        # NOTE: the attribute name is fetched from the query params and for that attrbute
-        # the model attribute name is fetched using a dict and the data is saved to that attribute.
-        for key, value in query_params.items():
-            setattr(company_data_obj, COMPANY_DATA_QUESTIONS_MAPPING[key], value)
+        AnonData.objects.create(identifier=uuid_generated, data=anon_data)
 
-        # Now the data saving part is complete. Have to check for eligibility next.
-        company_data_obj.save()
-
-
-        sequential_match_obj = SequentialMatch(os.path.join(settings.BASE_DIR, 'utils',
-                                                            'Decision_Table_one.csv'), query_params)
+        # Checking the eligibility of the user, depending on the params used in the method below.
+        sequential_match_obj = SequentialMatch(os.path.join(
+            settings.BASE_DIR, 'utils', 'Decision_Table_one.csv'), {
+                "age" : timezone.now().year - int(request_data.get('year_of_registration')),
+                "revenue" : request_data.get('revenue'),
+                "amount requested": request_data.get('amount')
+            })
 
         # This is a pandas dataframe object and can be played with however required.
         sequential_result = sequential_match_obj.get_action_for_condition()
-        eligibility_status = sequential_result.to_dict['status'].values()[0]
 
-        if eligibility_status == 'TRUE':
-            return Response("Done")
-        else:
-            return Response("Rejected")
+        # Using eval here to convert the text boolean value to python boolean values.
+        # The result we get here will be 'True' or 'False'. eval converts to
+        eligibility_status = eval(list(sequential_result.to_dict()['status'].values())[0])
+
+        # If eligible then simply send the generated uuid.
+        if eligibility_status:
+
+            return Response({
+                "status" : "ok",
+                "uuid" : uuid_generated
+            })
+
+        # If not eligible then decline the user and send rejected to front end.
+        user_data_obj = UserData.objects.get(user=request.user)
+        user_data_obj.session_data['current_state'] = 'declined'
+        user_data_obj.save()
+
+        return Response({
+            "status" : "declined",
+        })

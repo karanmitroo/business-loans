@@ -10,3 +10,5 @@ COMPANY_DATA_QUESTIONS_MAPPING = {
     "sector": "sector",
     "pin": "address"
     }
+
+USER_STATES = ['start_application', 'eligibility_check', 'choose_plan']
