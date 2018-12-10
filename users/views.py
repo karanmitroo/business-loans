@@ -162,7 +162,7 @@ class Eligibility(APIView):
             "amount_requested": request_data.get('amount')
         }
 
-        AnonData.objects.create(identifier=uuid_generated, data=anon_data)
+        anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
 
         # Checking the eligibility of the user, depending on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
@@ -188,10 +188,9 @@ class Eligibility(APIView):
                 "uuid" : uuid_generated
             })
 
-        # If not eligible then decline the user and send rejected to front end.
-        user_data_obj = UserData.objects.get(user=request.user)
-        user_data_obj.session_data['current_state'] = 'declined'
-        user_data_obj.save()
+        # If not eligible then decline and save the status to anonymous data.
+        anon_data_obj.data['status'] = 'declined'
+        anon_data_obj.save()
 
         return Response({
             "status" : "declined",

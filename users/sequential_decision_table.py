@@ -11,15 +11,18 @@ class ParseTable:
         self.set_headers()
 
     def set_headers(self):
-        condition_headers_regex = re.compile('([\w\s]*\w)\s*\[([\w\s]*)\]')
+        condition_headers_regex = re.compile(r'([\w\s]*\w)\s*\[([\w\s]*)\]')
         for each_column_name in self.table.columns.values:
             column_match = condition_headers_regex.match(each_column_name)
             if column_match is not None:
-                self.condition_headers[column_match.group(1).lower()] = column_match.group(2).lower()
-                self.table.rename(columns={each_column_name: column_match.group(1).lower()}, inplace=True)
+                self.condition_headers[
+                    column_match.group(1).lower()] = column_match.group(2).lower()
+                self.table.rename(columns={
+                    each_column_name: column_match.group(1).lower()}, inplace=True)
             else:
                 self.action_headers.append(each_column_name.lower())
-                self.table.rename(columns={each_column_name: each_column_name.lower()}, inplace=True)
+                self.table.rename(columns={
+                    each_column_name: each_column_name.lower()}, inplace=True)
 
 
 class EvalMethod:
@@ -51,7 +54,8 @@ class EvalMethod:
         # Case where input has a lower and upper value, comma separated.
         # Like: (193, 492)
         if '|' in existing_data:
-            min_allowed, max_allowed = list(map(lambda x: float(x.strip()), existing_data.split('|')))
+            min_allowed, max_allowed = list(
+                map(lambda x: float(x.strip()), existing_data.split('|')))
             return min_allowed <= float(new_data) <= max_allowed
 
         # When it only has one value with the operator before it or it can be NA to be matched equal.
@@ -83,7 +87,3 @@ class SequentialMatch:
         # This will return a pandas dataframe, which can be played with when and where required.
         # Like somewhere it might be converted to list, while somewhere else can be a dict.
         return self.table_obj.table[self.table_obj.action_headers]
-
-
-
-        
