@@ -37,7 +37,7 @@ class CompanyData(models.Model):
         (Retail, settings.SECTORS[2]),
         (Med, settings.SECTORS[3]),
         (Infra, settings.SECTORS[4]),
-        (Oth,settings.SECTORS[5]))
+        (Oth, settings.SECTORS[5]))
     sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)
 
 

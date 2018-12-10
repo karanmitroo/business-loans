@@ -1,6 +1,8 @@
 import os
-import uuid
+import sys
 
+import uuid
+from random import randint, choice
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -14,6 +16,8 @@ from rest_framework.views import APIView
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
 from utils.questions import QUESTIONS_FOR_ELIGIBILITY
+
+from packages.models import Packages
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -163,6 +167,7 @@ class Eligibility(APIView):
             "amount_requested": request_data.get('amount')
         }
 
+
         AnonData.objects.create(identifier=uuid_generated, data=anon_data)
 
         # Checking the eligibility of the user, depending on the params used in the method below.
@@ -188,11 +193,82 @@ class Eligibility(APIView):
                 "uuid" : uuid_generated
             })
 
-        # If not eligible then decline the user and send rejected to front end.
-        user_data_obj = UserData.objects.get(user=request.user)
-        user_data_obj.session_data['current_state'] = 'declined'
-        user_data_obj.save()
 
         return Response({
             "status" : "declined",
         })
+
+class GetIndepthDetails(APIView):
+
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+    @classmethod
+    def post(cls, request):
+        user_obj = request.user
+        print(user_obj)
+        request_data = request.data
+        indepth_data = {
+            "tax_reg_no" : request_data.get('tax_reg_no'),
+            "sector" : request_data.get('sector'),
+            "address": request_data.get('location')
+        }
+
+        print("user_obj",user_obj)
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+        company_data_obj.tax_reg_no = indepth_data["tax_reg_no"]
+        company_data_obj.sector = indepth_data["sector"]
+        company_data_obj.address = indepth_data["address"]
+        company_data_obj.save()
+
+
+        print("id is- ", company_data_obj.business_id)
+        print("Amount wanted is- ", company_data_obj.amount_requested)
+
+        LOCATION = ["Urban", "Semi-Urban", "Rural"]
+        cibil = randint(1,10)
+        # cibil = 4
+        location_option = choice(LOCATION)
+
+
+        print ("Came uptil here with data", cibil, location_option)
+        # Checking the eligibility of the user, depending on the params used in the method below.
+        sequential_match_obj = SequentialMatch(os.path.join(
+            settings.BASE_DIR, 'utils', 'Decision_Table_two.csv'), {
+                "cibil rank" : cibil,
+                "sector" : request_data.get('sector'),
+                "location": location_option,
+            })
+
+        # This is a pandas dataframe object and can be played with however required.
+        sequential_result = sequential_match_obj.get_action_for_condition()
+
+        # Using eval here to convert the text boolean value to python boolean values.
+        # The result we get here will be 'True' or 'False'. eval converts to
+        eligibility_point = eval(list(sequential_result.to_dict()['score'].values())[0])
+
+        print("eligibility_status ", eligibility_point)
+
+
+        interest_rates = dict()
+
+
+        # print("I am coming till here")
+        for year in settings.YEAR_OPTIONS:
+            sequential_match_obj = SequentialMatch(os.path.join(
+                settings.BASE_DIR, 'utils', 'Decision_Table_three.csv'), {
+                    "score" : eligibility_point,
+                    "time in years" : year})
+            sequential_result = sequential_match_obj.get_action_for_condition()
+            interest_rate = eval(list(sequential_result.to_dict()['rate'].values())[0])
+            interest_rates[year] = interest_rate
+
+        print(interest_rates)
+
+        for years, rate in interest_rates.items():
+            if rate != "NA":
+                _ = Packages.objects.create(amount=int(company_data_obj.amount_requested),
+                                            tenure_months=int(years),rate=float(rate),
+                                            selected=False,
+                                            user_id=company_data_obj.business_id)
+
+        return Response(interest_rates)

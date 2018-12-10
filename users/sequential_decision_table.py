@@ -39,7 +39,7 @@ class EvalMethod:
         try:
             return int(float(new_data)) == int(float(existing_data))
         except ValueError:
-            return str(new_data) == existing_data
+            return str(new_data.strip()) == existing_data.strip()
 
     @staticmethod
     def range(new_data, existing_data):
@@ -52,6 +52,7 @@ class EvalMethod:
         # Like: (193, 492)
         if '|' in existing_data:
             min_allowed, max_allowed = list(map(lambda x: float(x.strip()), existing_data.split('|')))
+            # print (min_allowed, max_allowed)
             return min_allowed <= float(new_data) <= max_allowed
 
         # When it only has one value with the operator before it or it can be NA to be matched equal.
@@ -73,17 +74,12 @@ class SequentialMatch:
         # over the dataframe columns. The eval methods are present in the the conditional headers dict
         # and their implementation in the class EvalMethods
         for key, value in self.dict_condition.items():
-
             self.table_obj.table = self.table_obj.table[
                 self.table_obj.table[key].apply(lambda x: eval("self.eval_methods." +
-                                                               self.table_obj.condition_headers[key] +
-                                                               "(" + repr(value) + "," + repr(x) + ")"))
-            ]
+                                                               self.table_obj.condition_headers[key]
+                                                               + "(" + repr(value) + "," + repr(x)
+                                                               + ")"))]
 
         # This will return a pandas dataframe, which can be played with when and where required.
         # Like somewhere it might be converted to list, while somewhere else can be a dict.
         return self.table_obj.table[self.table_obj.action_headers]
-
-
-
-        

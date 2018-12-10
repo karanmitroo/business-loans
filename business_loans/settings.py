@@ -130,4 +130,6 @@ STATIC_URL = '/static/'
 
 
 
-SECTORS = ["Agriculture","Finance","Retail","Medical Research","Infrastructure","Others"]
+SECTORS = ["Agriculture", "Finance", "Retail", "Medical Research", "Infrastructure", "Others"]
+
+YEAR_OPTIONS = [1, 2, 3, 5, 10]
