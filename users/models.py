@@ -9,6 +9,7 @@ class UserData(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
+    session_data = JSONField(default=dict)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -22,6 +23,7 @@ class CompanyData(models.Model):
     misc_data = JSONField(default=dict)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    amount_requested = models.IntegerField()
 
     Agri = 'Agri'
     Fin = 'Fin'
@@ -37,3 +39,10 @@ class CompanyData(models.Model):
         (Infra, settings.SECTORS[4]),
         (Oth,settings.SECTORS[5]))
     sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)
+
+
+class AnonData(models.Model):
+    identifier = models.TextField(unique=True)
+    data = JSONField(default=dict)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
