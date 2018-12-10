@@ -1,6 +1,6 @@
 import os
 import uuid
-
+import ast
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
-from utils.questions import QUESTIONS_FOR_ELIGIBILITY
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -178,7 +177,8 @@ class Eligibility(APIView):
 
         # Using eval here to convert the text boolean value to python boolean values.
         # The result we get here will be 'True' or 'False'. eval converts to
-        eligibility_status = eval(list(sequential_result.to_dict()['status'].values())[0])
+        eligibility_status = ast.literal_eval(
+            list(sequential_result.to_dict()['status'].values())[0])
 
         # If eligible then simply send the generated uuid.
         if eligibility_status:
