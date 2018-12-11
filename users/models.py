@@ -1,7 +1,7 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.conf import settings
 
 # Create your models here.
 
@@ -37,9 +37,8 @@ class CompanyData(models.Model):
         (Retail, settings.SECTORS[2]),
         (Med, settings.SECTORS[3]),
         (Infra, settings.SECTORS[4]),
-        (Oth,settings.SECTORS[5]))
+        (Oth, settings.SECTORS[5]))
     sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)
-
 
 class AnonData(models.Model):
     identifier = models.TextField(unique=True)
