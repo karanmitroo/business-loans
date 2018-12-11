@@ -13,7 +13,7 @@ def create_package_data(company_data_obj):
 
     #Creating the sequential_match_obj using the third decision table
     sequential_match_obj = SequentialMatch(os.path.join(
-        settings.BASE_DIR, 'utils', 'Decision_Table_three.csv'), {
+        settings.BASE_DIR, 'utils', 'package_decision_table.csv'), {
             "score" : company_data_obj.misc_data['eligibility_point']})
 
     # This is a pandas dataframe object and can be played with however required.

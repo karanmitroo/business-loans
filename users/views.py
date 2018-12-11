@@ -250,7 +250,7 @@ class GetIndepthDetails(APIView):
 
         # Getting the eligibility_point of the user, using on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
-            settings.BASE_DIR, 'utils', 'Decision_Table_two.csv'), {
+            settings.BASE_DIR, 'utils', 'score_decision_table.csv'), {
                 "cibil rank" : cibil,
                 "sector" : request_data.get('sector'),
                 "location": location_option,
