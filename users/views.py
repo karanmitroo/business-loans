@@ -276,3 +276,25 @@ class GetIndepthDetails(APIView):
 
         #Return eligibility_point as well as the state
         return Response((eligibility_point, state))
+
+
+
+    @classmethod
+    def get(cls, request):
+        """
+        Will be called to get saved additional details of customer
+        which have been used to calculate a eligibility_point
+        """
+
+        print("I am in GET method")
+
+        user_obj = request.user
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+        indepth_data = {}
+        indepth_data["tax_reg_no"] = company_data_obj.tax_reg_no
+        indepth_data["sector"] = company_data_obj.sector
+        indepth_data["address"] = company_data_obj.address
+
+        print("indepth_data",indepth_data)
+
+        return Response(indepth_data)
