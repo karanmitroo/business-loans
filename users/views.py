@@ -1,7 +1,10 @@
 import os
 
+
 import uuid
 from random import randint, choice
+import ast
+
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -14,7 +17,6 @@ from rest_framework.views import APIView
 
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
-from utils.questions import QUESTIONS_FOR_ELIGIBILITY
 
 from packages.utils import create_package_data
 
@@ -163,18 +165,17 @@ class Eligibility(APIView):
         anon_data = {
             "year_of_registration" : request_data.get('year_of_registration'),
             "revenue" : request_data.get('revenue'),
-            "amount_requested": request_data.get('amount')
+            "amount_requested": request_data.get('amount_requested')
         }
 
-
-        AnonData.objects.create(identifier=uuid_generated, data=anon_data)
+        anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
 
         # Checking the eligibility of the user, depending on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
-            settings.BASE_DIR, 'utils', 'Decision_Table_one.csv'), {
+            settings.BASE_DIR, 'utils', 'eligibility_decision_table.csv'), {
                 "age" : timezone.now().year - int(request_data.get('year_of_registration')),
                 "revenue" : request_data.get('revenue'),
-                "amount requested": request_data.get('amount')
+                "amount requested": request_data.get('amount_requested')
             })
 
         # This is a pandas dataframe object and can be played with however required.
@@ -182,7 +183,8 @@ class Eligibility(APIView):
 
         # Using eval here to convert the text boolean value to python boolean values.
         # The result we get here will be 'True' or 'False'. eval converts to
-        eligibility_status = eval(list(sequential_result.to_dict()['status'].values())[0])
+        eligibility_status = ast.literal_eval(
+            list(sequential_result.to_dict()['status'].values())[0])
 
         # If eligible then simply send the generated uuid.
         if eligibility_status:
@@ -192,6 +194,9 @@ class Eligibility(APIView):
                 "uuid" : uuid_generated
             })
 
+        # If not eligible then decline and save the status to anonymous data.
+        anon_data_obj.data['status'] = 'declined'
+        anon_data_obj.save()
 
         return Response({
             "status" : "declined",
