@@ -159,17 +159,17 @@ class Eligibility(APIView):
         anon_data = {
             "year_of_registration" : request_data.get('year_of_registration'),
             "revenue" : request_data.get('revenue'),
-            "amount_requested": request_data.get('amount')
+            "amount_requested": request_data.get('amount_requested')
         }
 
         anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
 
         # Checking the eligibility of the user, depending on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
-            settings.BASE_DIR, 'utils', 'Decision_Table_one.csv'), {
+            settings.BASE_DIR, 'utils', 'eligibility_decision_table.csv'), {
                 "age" : timezone.now().year - int(request_data.get('year_of_registration')),
                 "revenue" : request_data.get('revenue'),
-                "amount requested": request_data.get('amount')
+                "amount requested": request_data.get('amount_requested')
             })
 
         # This is a pandas dataframe object and can be played with however required.
