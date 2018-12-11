@@ -17,5 +17,6 @@ from django.contrib import admin
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^api_v1/users/', include('users.urls'))
+    url(r'^api_v1/users/', include('users.urls')),
+    url(r'^api_v1/packages/', include('packages.urls'))
 ]
