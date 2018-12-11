@@ -1,5 +1,4 @@
 import os
-import sys
 
 import uuid
 from random import randint, choice
@@ -17,7 +16,7 @@ from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
 from utils.questions import QUESTIONS_FOR_ELIGIBILITY
 
-from packages.models import Packages
+from packages.utils import create_package_data
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -204,16 +203,26 @@ class GetIndepthDetails(APIView):
 
     @classmethod
     def post(cls, request):
+        """
+        Will be called to check get additional details of customer
+        which will be used to calculate a eligibility_point
+        which will in turn be sent to the packages module to
+        find which paackages (rate & years) can be given
+        to the customer.
+        """
+
+        #Creating the user object and getting the request data
         user_obj = request.user
-        print(user_obj)
         request_data = request.data
+
+        #Extracting more data points regarding the user.
         indepth_data = {
             "tax_reg_no" : request_data.get('tax_reg_no'),
             "sector" : request_data.get('sector'),
             "address": request_data.get('location')
         }
 
-        print("user_obj",user_obj)
+        #Updating the compant data object with the newly avaialable data points
         company_data_obj = CompanyData.objects.get(business=user_obj)
         company_data_obj.tax_reg_no = indepth_data["tax_reg_no"]
         company_data_obj.sector = indepth_data["sector"]
@@ -221,17 +230,20 @@ class GetIndepthDetails(APIView):
         company_data_obj.save()
 
 
-        print("id is- ", company_data_obj.business_id)
-        print("Amount wanted is- ", company_data_obj.amount_requested)
 
         LOCATION = ["Urban", "Semi-Urban", "Rural"]
+
+        #To be replaced with an api call that will send the tax registration number and
+        #get the cibil score in return
         cibil = randint(1,10)
-        # cibil = 4
+
+        #To be replaced with an api call that will send the location details
+        #and get whether it is in a urban, semi-urban or rural neighbourhood in return
         location_option = choice(LOCATION)
 
 
-        print ("Came uptil here with data", cibil, location_option)
-        # Checking the eligibility of the user, depending on the params used in the method below.
+
+        # Getting the eligibility_point of the user, using on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
             settings.BASE_DIR, 'utils', 'Decision_Table_two.csv'), {
                 "cibil rank" : cibil,
@@ -242,33 +254,20 @@ class GetIndepthDetails(APIView):
         # This is a pandas dataframe object and can be played with however required.
         sequential_result = sequential_match_obj.get_action_for_condition()
 
-        # Using eval here to convert the text boolean value to python boolean values.
-        # The result we get here will be 'True' or 'False'. eval converts to
+        # Using eval to ge the eligibility point here
         eligibility_point = eval(list(sequential_result.to_dict()['score'].values())[0])
 
-        print("eligibility_status ", eligibility_point)
+        #Saving the eligibility point in the misc_data attribute of the company
+        company_data_obj.misc_data["eligibility_point"] = eligibility_point
+        company_data_obj.save()
 
 
-        interest_rates = dict()
 
+        #Call the function that will calculate and create the package data based on loan eligibility
+        if eligibility_point != 0:
+            state = create_package_data(company_data_obj)
+        else:
+            state = "Not eligible for a loan"
 
-        # print("I am coming till here")
-        for year in settings.YEAR_OPTIONS:
-            sequential_match_obj = SequentialMatch(os.path.join(
-                settings.BASE_DIR, 'utils', 'Decision_Table_three.csv'), {
-                    "score" : eligibility_point,
-                    "time in years" : year})
-            sequential_result = sequential_match_obj.get_action_for_condition()
-            interest_rate = eval(list(sequential_result.to_dict()['rate'].values())[0])
-            interest_rates[year] = interest_rate
-
-        print(interest_rates)
-
-        for years, rate in interest_rates.items():
-            if rate != "NA":
-                _ = Packages.objects.create(amount=int(company_data_obj.amount_requested),
-                                            tenure_months=int(years),rate=float(rate),
-                                            selected=False,
-                                            user_id=company_data_obj.business_id)
-
-        return Response(interest_rates)
+        #Return eligibility_point as well as the state
+        return Response((eligibility_point, state))
