@@ -42,7 +42,7 @@ class EvalMethod:
         try:
             return int(float(new_data)) == int(float(existing_data))
         except ValueError:
-            return str(new_data) == existing_data
+            return str(new_data.strip()) == existing_data.strip()
 
     @staticmethod
     def range(new_data, existing_data):
@@ -77,12 +77,11 @@ class SequentialMatch:
         # over the dataframe columns. The eval methods are present in the the conditional headers dict
         # and their implementation in the class EvalMethods
         for key, value in self.dict_condition.items():
-
             self.table_obj.table = self.table_obj.table[
                 self.table_obj.table[key].apply(lambda x: eval("self.eval_methods." +
-                                                               self.table_obj.condition_headers[key] +
-                                                               "(" + repr(value) + "," + repr(x) + ")"))
-            ]
+                                                               self.table_obj.condition_headers[key]
+                                                               + "(" + repr(value) + "," + repr(x)
+                                                               + ")"))]
 
         # This will return a pandas dataframe, which can be played with when and where required.
         # Like somewhere it might be converted to list, while somewhere else can be a dict.
