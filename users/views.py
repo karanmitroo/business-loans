@@ -202,6 +202,31 @@ class Eligibility(APIView):
             "status" : "declined",
         })
 
+      
+class GetUser(APIView):
+    """ To send the user data if the user is logged in """
+
+    @classmethod
+    def get(cls, request):
+        """ Will be called whenever the current status of a user (if logged in)
+        has to be known """
+        if request.user.is_authenticated:
+            user_obj = request.user
+            user_data_obj = UserData.objects.get(user=user_obj)
+
+            data = {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+
+            return Response(data)
+
+        return Response({
+            "status" : "nok"
+        })
+
+
 class GetIndepthDetails(APIView):
 
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
