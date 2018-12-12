@@ -133,4 +133,4 @@ STATIC_URL = '/static/'
 
 
 
-SECTORS = ["Agriculture","Finance","Retail","Medical Research","Infrastructure","Others"]
+SECTORS = ["Agriculture", "Finance", "Retail", "Medical Research", "Infrastructure", "Others"]

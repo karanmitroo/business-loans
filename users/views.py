@@ -1,6 +1,10 @@
 import os
+
+
 import uuid
+from random import randint, choice
 import ast
+
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -13,6 +17,8 @@ from rest_framework.views import APIView
 
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
+
+from packages.utils import create_package_data
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -196,8 +202,7 @@ class Eligibility(APIView):
             "status" : "declined",
         })
 
-
-
+      
 class GetUser(APIView):
     """ To send the user data if the user is logged in """
 
@@ -220,3 +225,101 @@ class GetUser(APIView):
         return Response({
             "status" : "nok"
         })
+
+
+class GetIndepthDetails(APIView):
+
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+    @classmethod
+    def post(cls, request):
+        """
+        Will be called to check get additional details of customer
+        which will be used to calculate a eligibility_point
+        which will in turn be sent to the packages module to
+        find which paackages (rate & years) can be given
+        to the customer.
+        """
+
+        #Creating the user object and getting the request data
+        user_obj = request.user
+        request_data = request.data
+
+        #Extracting more data points regarding the user.
+        indepth_data = {
+            "tax_reg_no" : request_data.get('tax_reg_no'),
+            "sector" : request_data.get('sector'),
+            "address": request_data.get('location')
+        }
+
+        #Updating the compant data object with the newly avaialable data points
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+        company_data_obj.tax_reg_no = indepth_data["tax_reg_no"]
+        company_data_obj.sector = indepth_data["sector"]
+        company_data_obj.address = indepth_data["address"]
+        company_data_obj.save()
+
+
+
+        LOCATION = ["Urban", "Semi-Urban", "Rural"]
+
+        #To be replaced with an api call that will send the tax registration number and
+        #get the cibil score in return
+        cibil = randint(1,10)
+
+        #To be replaced with an api call that will send the location details
+        #and get whether it is in a urban, semi-urban or rural neighbourhood in return
+        location_option = choice(LOCATION)
+
+
+
+        # Getting the eligibility_point of the user, using on the params used in the method below.
+        sequential_match_obj = SequentialMatch(os.path.join(
+            settings.BASE_DIR, 'utils', 'score_decision_table.csv'), {
+                "cibil rank" : cibil,
+                "sector" : request_data.get('sector'),
+                "location": location_option,
+            })
+
+        # This is a pandas dataframe object and can be played with however required.
+        sequential_result = sequential_match_obj.get_action_for_condition()
+
+        # Using eval to ge the eligibility point here
+        eligibility_point = eval(list(sequential_result.to_dict()['score'].values())[0])
+
+        #Saving the eligibility point in the misc_data attribute of the company
+        company_data_obj.misc_data["eligibility_point"] = eligibility_point
+        company_data_obj.save()
+
+
+
+        #Call the function that will calculate and create the package data based on loan eligibility
+        if eligibility_point != 0:
+            state = create_package_data(company_data_obj)
+        else:
+            state = "Not eligible for a loan"
+
+        #Return eligibility_point as well as the state
+        return Response((eligibility_point, state))
+
+
+
+    @classmethod
+    def get(cls, request):
+        """
+        Will be called to get saved additional details of customer
+        which have been used to calculate a eligibility_point
+        """
+
+        print("I am in GET method")
+
+        user_obj = request.user
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+        indepth_data = {}
+        indepth_data["tax_reg_no"] = company_data_obj.tax_reg_no
+        indepth_data["sector"] = company_data_obj.sector
+        indepth_data["address"] = company_data_obj.address
+
+        print("indepth_data",indepth_data)
+
+        return Response(indepth_data)
