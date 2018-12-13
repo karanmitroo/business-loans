@@ -125,7 +125,8 @@ class Login(APIView):
             # Login the user and send the current state where the user is present.
             return Response({
                 "status" : "ok",
-                "current_state" : user_data_obj.session_data['current_state']
+                "current_state" : user_data_obj.session_data['current_state'],
+                "username" : user_obj.username
             })
 
         return Response({
