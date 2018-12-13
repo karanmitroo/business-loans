@@ -316,16 +316,26 @@ class GetIndepthDetails(APIView):
         if eligibility_point != 0:
             user_data_obj = UserData.objects.get(user=user_obj)
             user_data_obj.session_data['current_state'] = 'choose_package'
+            user_data_obj.save()
+            create_package_data(company_data_obj)
+            return Response(
+                {"status" : "ok",
+                 "user" : {
+                     "status" : "ok",
+                     "username" : user_obj.username,
+                     "current_state" : user_data_obj.session_data.get('current_state')
+                 }})
 
-            state = create_package_data(company_data_obj)
-        else:
-            user_data_obj.session_data['current_state'] = 'declined'
-
-
+        # If the user is declined then send status as "nok"
+        user_data_obj.session_data['current_state'] = 'declined'
         user_data_obj.save()
-
-        #Return eligibility_point as well as the state
-        return Response((eligibility_point, state))
+        return Response(
+            {"status" : "nok",
+             "user" : {
+                 "status" : "ok",
+                 "username" : user_obj.username,
+                 "current_state" : user_data_obj.session_data.get('current_state')
+             }})
 
 
 
