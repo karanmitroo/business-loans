@@ -88,7 +88,7 @@ class Register(APIView):
         anon_data = AnonData.objects.get(identifier=identifier)
 
         # Save username from the previously fetched company name
-        user_obj.username = anon_data.data['company_name']
+        user_obj.first_name = anon_data.data['company_name']
         user_obj.save()
 
         # Saving the fetched anonymous data to data of a known user.
@@ -172,6 +172,9 @@ class Eligibility(APIView):
         Will be called to check eligibility for a company before getting them registering
         to the platform.
         """
+
+        print("Inside eligibility")
+
         request_data = request.data
 
         # We have got a lot of data here but do NOT know who the user is.
@@ -263,7 +266,7 @@ class GetIndepthDetails(APIView):
         #Creating the user object and getting the request data
         user_obj = request.user
         request_data = request.data
-        print ("Came here")
+
         #Extracting more data points regarding the user.
         indepth_data = {
             "tax_reg_no" : request_data.get('taxRegNo'),
@@ -271,7 +274,7 @@ class GetIndepthDetails(APIView):
             "address": request_data.get('location')
         }
 
-        print (indepth_data, user_obj)
+
         #Updating the compant data object with the newly avaialable data points
         company_data_obj = CompanyData.objects.get(business=user_obj)
         company_data_obj.tax_reg_no = indepth_data["tax_reg_no"]
@@ -279,7 +282,7 @@ class GetIndepthDetails(APIView):
         company_data_obj.address = indepth_data["address"]
         company_data_obj.save()
 
-        print ("Saved company data")
+
         LOCATION = ["Urban", "Semi-Urban", "Rural"]
 
         #To be replaced with an api call that will send the tax registration number and
@@ -289,7 +292,8 @@ class GetIndepthDetails(APIView):
         #To be replaced with an api call that will send the location details
         #and get whether it is in a urban, semi-urban or rural neighbourhood in return
         location_option = choice(LOCATION)
-        print ("things choosen")
+
+
 
 
         # Getting the eligibility_point of the user, using on the params used in the method below.
@@ -313,8 +317,9 @@ class GetIndepthDetails(APIView):
 
 
         #Call the function that will calculate and create the package data based on loan eligibility
+        user_data_obj = UserData.objects.get(user=user_obj)
+
         if eligibility_point != 0:
-            user_data_obj = UserData.objects.get(user=user_obj)
             user_data_obj.session_data['current_state'] = 'choose_package'
             user_data_obj.save()
             create_package_data(company_data_obj)
@@ -327,15 +332,16 @@ class GetIndepthDetails(APIView):
                  }})
 
         # If the user is declined then send status as "nok"
-        user_data_obj.session_data['current_state'] = 'declined'
-        user_data_obj.save()
-        return Response(
-            {"status" : "nok",
-             "user" : {
-                 "status" : "ok",
-                 "username" : user_obj.username,
-                 "current_state" : user_data_obj.session_data.get('current_state')
-             }})
+        # user_data_obj.session_data['current_state'] = 'declined'
+        # user_data_obj.save()
+        return Response({
+            "status" : "nok",
+            "user" : {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+        })
 
 
 
