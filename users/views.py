@@ -1,12 +1,10 @@
-import os
-
-
-import uuid
-from random import randint, choice
 import ast
+import os
+import uuid
+from random import choice, randint
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils import timezone
@@ -15,10 +13,9 @@ from rest_framework.authentication import (BasicAuthentication,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from packages.utils import create_package_data
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
-
-from packages.utils import create_package_data
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -136,6 +133,20 @@ class Login(APIView):
             "response" : "Wrong Username/ Password. Please Try again."
         })
 
+
+class Logout(APIView):
+    """ To log out a user and remove the session data and cookie """
+
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+    @classmethod
+    def post(cls, request):
+
+        print (request.user)
+        # Call this method to log out a user
+        logout(request)
+
+        return Response({"status" : "ok"})
 
 class Eligibility(APIView):
     """ To check if a user is eligibile or not for the loan """
