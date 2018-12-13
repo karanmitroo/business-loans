@@ -22,16 +22,16 @@ def create_package_data(company_data_obj):
 
     #Fill up the values for the dictionary that is to have the rates and years
     for year, rate in sequential_result.to_dict().items():
-        interest_rates_dict[int(year)] = float(list(rate.values())[0])
+        interest_rates_dict[int(year)] = (list(rate.values())[0])
 
-    print ("Interest Rates", interest_rates_dict)
-    
+    print("Interest Rates", interest_rates_dict)
+
     #Delete packages for the business in case it already exists
     Packages.objects.filter(user=company_data_obj.business).delete()
 
     #Push computed package details of the company in the package table
     for years, rate in interest_rates_dict.items():
-        if rate != "NA":
+        if rate.strip() != "NA":
             _ = Packages.objects.create(amount=int(company_data_obj.amount_requested),
                                         tenure_years=int(years), rate=float(rate),
                                         selected=False,
