@@ -1,0 +1,20 @@
+TEST_JSON = {"test_case_one": {
+    'year_of_registration': 2017,
+    'revenue': 15,
+    'amount_requested': 10,
+    'result': 'declined'},
+             "test_case_two": {
+                 'year_of_registration': 2012,
+                 'revenue': 50,
+                 'amount_requested': 10,
+                 'result': 'ok'},
+             "test_case_three": {
+                 'year_of_registration': 1994,
+                 'revenue': 50,
+                 'amount_requested': 100,
+                 'result': 'ok'},
+             "test_case_four": {
+                 'year_of_registration': 2011,
+                 'revenue': 15,
+                 'amount_requested': 10,
+                 'result': 'ok'}}

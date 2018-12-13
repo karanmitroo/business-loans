@@ -45,7 +45,8 @@ class GetAndSetPlans(APIView):
         package_data = Packages.objects.filter(user=company_data_obj.business)
 
         response_data = {}
-        response_data["rates"]={}
+        response_data["rates"] = {}
+
         for each_data in package_data:
             response_data["rates"][each_data.tenure_months] = each_data.rate
         response_data["amount"] = package_data[0].amount
@@ -63,14 +64,15 @@ class GetAndSetPlans(APIView):
 
         user_obj = request.user
         request_data = request.data
-        print("Updating")
+
         # Packages.object.filter(user=user_obj).update(selected=False)
         Packages.objects.filter(user=user_obj).update(selected=False)
 
-        print("Updating Done")
         package_data = Packages.objects.get(user=user_obj, id=request_data.get('id'))
         package_data.selected = True
         package_data.save()
+
+
 
 
         return Response("Saved package")

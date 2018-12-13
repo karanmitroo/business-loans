@@ -35,7 +35,6 @@ class Register(APIView):
     @classmethod
     def post(cls, request):
         """ Will be called when a user tries to register to the platform """
-        username = request.data.get('username')
         password = request.data.get('password')
         email = request.data.get('email')
 
@@ -70,7 +69,7 @@ class Register(APIView):
     def create_userdata(cls, user_obj):
         """ To create a userdata object as and when a new user registers to the platform. """
         user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
-        user_data_obj.session_data['current_state'] = 'eligibility_check'
+        user_data_obj.session_data['current_state'] = 'indepth_details'
         user_data_obj.save()
 
     @classmethod
@@ -78,6 +77,10 @@ class Register(APIView):
         """ To fetch anonymous data from AnonData model and save it for any actual user """
 
         anon_data = AnonData.objects.get(identifier=identifier)
+
+        # Save username from the previously fetched company name
+        user_obj.username = anon_data.data['company_name']
+        user_obj.save()
 
         # Saving the fetched anonymous data to data of a known user.
         _ = CompanyData.objects.create(
@@ -125,25 +128,6 @@ class Login(APIView):
         })
 
 
-class UserForm(APIView):
-    """ Returns a set of questions to be asked on the frontend depending on which phase
-    of the application user is currently at. """
-
-    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
-
-    @classmethod
-    def get(cls, request):
-        """ This will be called when questions has to be asked to a user. """
-        # Get the phase no for which the questions has to be shown.
-        phase_no = request.query_params.get('phase_no', None)
-
-        # If a phase no is given, then return the questions and related data for that phase no.
-        if phase_no is not None:
-            return Response(QUESTIONS_FOR_ELIGIBILITY.get(phase_no, None))
-
-        # If phase no not given then return as bad request.
-        return Response("Bad Request")
-
 class Eligibility(APIView):
     """ To check if a user is eligibile or not for the loan """
 
@@ -165,7 +149,8 @@ class Eligibility(APIView):
         anon_data = {
             "year_of_registration" : request_data.get('year_of_registration'),
             "revenue" : request_data.get('revenue'),
-            "amount_requested": request_data.get('amount_requested')
+            "amount_requested": request_data.get('amount_requested'),
+            "company_name": request_data.get('company_name')
         }
 
         anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
@@ -202,7 +187,6 @@ class Eligibility(APIView):
             "status" : "declined",
         })
 
-      
 class GetUser(APIView):
     """ To send the user data if the user is logged in """
 
@@ -259,8 +243,6 @@ class GetIndepthDetails(APIView):
         company_data_obj.address = indepth_data["address"]
         company_data_obj.save()
 
-
-
         LOCATION = ["Urban", "Semi-Urban", "Rural"]
 
         #To be replaced with an api call that will send the tax registration number and
@@ -295,9 +277,15 @@ class GetIndepthDetails(APIView):
 
         #Call the function that will calculate and create the package data based on loan eligibility
         if eligibility_point != 0:
+            user_data_obj = UserData.objects.get(user=user_obj)
+            user_data_obj.session_data['current_state'] = 'choose_package'
+
             state = create_package_data(company_data_obj)
         else:
-            state = "Not eligible for a loan"
+            user_data_obj.session_data['current_state'] = 'declined'
+
+
+        user_data_obj.save()
 
         #Return eligibility_point as well as the state
         return Response((eligibility_point, state))
@@ -311,15 +299,21 @@ class GetIndepthDetails(APIView):
         which have been used to calculate a eligibility_point
         """
 
-        print("I am in GET method")
-
         user_obj = request.user
-        company_data_obj = CompanyData.objects.get(business=user_obj)
-        indepth_data = {}
-        indepth_data["tax_reg_no"] = company_data_obj.tax_reg_no
-        indepth_data["sector"] = company_data_obj.sector
-        indepth_data["address"] = company_data_obj.address
 
-        print("indepth_data",indepth_data)
+        indepth_data = {}
+
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+
+        if (company_data_obj.tax_reg_no != '' and
+                company_data_obj.sector != '' and
+                company_data_obj.address != ''):
+            indepth_data["tax_reg_no"] = company_data_obj.tax_reg_no
+            indepth_data["sector"] = company_data_obj.sector
+            indepth_data["address"] = company_data_obj.address
+            indepth_data["locked"] = True
+
+        else:
+            indepth_data["locked"] = False
 
         return Response(indepth_data)
