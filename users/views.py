@@ -263,14 +263,15 @@ class GetIndepthDetails(APIView):
         #Creating the user object and getting the request data
         user_obj = request.user
         request_data = request.data
-
+        print ("Came here")
         #Extracting more data points regarding the user.
         indepth_data = {
-            "tax_reg_no" : request_data.get('tax_reg_no'),
+            "tax_reg_no" : request_data.get('taxRegNo'),
             "sector" : request_data.get('sector'),
             "address": request_data.get('location')
         }
 
+        print (indepth_data, user_obj)
         #Updating the compant data object with the newly avaialable data points
         company_data_obj = CompanyData.objects.get(business=user_obj)
         company_data_obj.tax_reg_no = indepth_data["tax_reg_no"]
@@ -278,6 +279,7 @@ class GetIndepthDetails(APIView):
         company_data_obj.address = indepth_data["address"]
         company_data_obj.save()
 
+        print ("Saved company data")
         LOCATION = ["Urban", "Semi-Urban", "Rural"]
 
         #To be replaced with an api call that will send the tax registration number and
@@ -287,7 +289,7 @@ class GetIndepthDetails(APIView):
         #To be replaced with an api call that will send the location details
         #and get whether it is in a urban, semi-urban or rural neighbourhood in return
         location_option = choice(LOCATION)
-
+        print ("things choosen")
 
 
         # Getting the eligibility_point of the user, using on the params used in the method below.
