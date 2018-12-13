@@ -1,12 +1,10 @@
-import os
-
-
-import uuid
-from random import randint, choice
 import ast
+import os
+import uuid
+from random import choice, randint
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.utils import timezone
@@ -15,10 +13,9 @@ from rest_framework.authentication import (BasicAuthentication,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from packages.utils import create_package_data
 from users.models import AnonData, CompanyData, UserData
 from users.sequential_decision_table import SequentialMatch
-
-from packages.utils import create_package_data
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
@@ -38,13 +35,14 @@ class Register(APIView):
         """ Will be called when a user tries to register to the platform """
         password = request.data.get('password')
         email = request.data.get('email')
+        username = request.data.get('username')
 
         # Check if any other user with the same username or email does NOT already exists.
         if User.objects.filter(Q(username=username) | Q(email=email)).exists():
             # If the user already exists, then ask them to login rather registering.
             return Response({
                 "status" : "nok",
-                "response" : "User Already Exists"
+                "response" : "This username/ email is already registered with the system. Kindly login to proceed further with your application."
             })
 
         # Else register and signin the user.
@@ -58,18 +56,25 @@ class Register(APIView):
         login(request, authenticated_user)
 
         # Also create the other models required further.
-        cls.create_userdata(authenticated_user)
+        user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
+        cls.create_userdata(user_data_obj)
 
         # Add any anonymous data to this actual users data
         cls.add_anon_data_to_userdata(request.data.get('uuid'), user_obj)
 
-        return Response("Thanks for logging in")
+        return Response({
+            "status" : "ok",
+            "user" : {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+        })
 
 
     @classmethod
-    def create_userdata(cls, user_obj):
+    def create_userdata(cls, user_data_obj):
         """ To create a userdata object as and when a new user registers to the platform. """
-        user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
         user_data_obj.session_data['current_state'] = 'indepth_details'
         user_data_obj.save()
 
@@ -80,7 +85,7 @@ class Register(APIView):
         anon_data = AnonData.objects.get(identifier=identifier)
 
         # Save username from the previously fetched company name
-        user_obj.username = anon_data.data['company_name']
+        user_obj.first_name = anon_data.data['company_name']
         user_obj.save()
 
         # Saving the fetched anonymous data to data of a known user.
@@ -89,7 +94,7 @@ class Register(APIView):
             revenue=anon_data.data['revenue'],
             amount_requested=anon_data.data['amount_requested'],
             date_of_registration=timezone.datetime(
-                year=int(anon_data.data['year_of_registration']),
+                year=int(anon_data.data['year_of_registration'].split('-')[0]),
                 month=1,
                 day=1)
             )
@@ -129,6 +134,20 @@ class Login(APIView):
         })
 
 
+class Logout(APIView):
+    """ To log out a user and remove the session data and cookie """
+
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+    @classmethod
+    def post(cls, request):
+
+        print (request.user)
+        # Call this method to log out a user
+        logout(request)
+
+        return Response({"status" : "ok"})
+
 class Eligibility(APIView):
     """ To check if a user is eligibile or not for the loan """
 
@@ -164,6 +183,9 @@ class Eligibility(APIView):
         Will be called to check eligibility for a company before getting them registering
         to the platform.
         """
+
+        print("Inside eligibility")
+
         request_data = request.data
 
         # We have got a lot of data here but do NOT know who the user is.
@@ -172,10 +194,10 @@ class Eligibility(APIView):
         # Matching this uuid will get us the user for which the data was collected.
         uuid_generated = uuid.uuid4()
         anon_data = {
-            "year_of_registration" : request_data.get('year_of_registration'),
+            "year_of_registration" : request_data.get('dateOfRegistration'),
             "revenue" : request_data.get('revenue'),
-            "amount_requested": request_data.get('amount_requested'),
-            "company_name": request_data.get('company_name')
+            "amount_requested": request_data.get('amountRequested'),
+            "company_name": request_data.get('companyName')
         }
 
         anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
@@ -183,9 +205,9 @@ class Eligibility(APIView):
         # Checking the eligibility of the user, depending on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
             settings.BASE_DIR, 'utils', 'eligibility_decision_table.csv'), {
-                "age" : timezone.now().year - int(request_data.get('year_of_registration')),
+                "age" : timezone.now().year - int(request_data.get('dateOfRegistration').split('-')[0]),
                 "revenue" : request_data.get('revenue'),
-                "amount requested": request_data.get('amount_requested')
+                "amount requested": request_data.get('amountRequested')
             })
 
         # This is a pandas dataframe object and can be played with however required.
@@ -201,7 +223,8 @@ class Eligibility(APIView):
 
             return Response({
                 "status" : "ok",
-                "uuid" : uuid_generated
+                "uuid" : uuid_generated,
+                "next_state" : "register"
             })
 
         # If not eligible then decline and save the status to anonymous data.
@@ -209,7 +232,8 @@ class Eligibility(APIView):
         anon_data_obj.save()
 
         return Response({
-            "status" : "declined",
+            "status" : "nok",
+            "next_state" : "declined"
         })
 
 class GetUser(APIView):
@@ -256,10 +280,11 @@ class GetIndepthDetails(APIView):
 
         #Extracting more data points regarding the user.
         indepth_data = {
-            "tax_reg_no" : request_data.get('tax_reg_no'),
+            "tax_reg_no" : request_data.get('taxRegNo'),
             "sector" : request_data.get('sector'),
             "address": request_data.get('location')
         }
+
 
         #Updating the compant data object with the newly avaialable data points
         company_data_obj = CompanyData.objects.get(business=user_obj)
@@ -267,6 +292,7 @@ class GetIndepthDetails(APIView):
         company_data_obj.sector = indepth_data["sector"]
         company_data_obj.address = indepth_data["address"]
         company_data_obj.save()
+
 
         LOCATION = ["Urban", "Semi-Urban", "Rural"]
 
@@ -277,6 +303,7 @@ class GetIndepthDetails(APIView):
         #To be replaced with an api call that will send the location details
         #and get whether it is in a urban, semi-urban or rural neighbourhood in return
         location_option = choice(LOCATION)
+
 
 
 
@@ -301,19 +328,31 @@ class GetIndepthDetails(APIView):
 
 
         #Call the function that will calculate and create the package data based on loan eligibility
+        user_data_obj = UserData.objects.get(user=user_obj)
+
         if eligibility_point != 0:
-            user_data_obj = UserData.objects.get(user=user_obj)
             user_data_obj.session_data['current_state'] = 'choose_package'
+            user_data_obj.save()
+            create_package_data(company_data_obj)
+            return Response(
+                {"status" : "ok",
+                 "user" : {
+                     "status" : "ok",
+                     "username" : user_obj.username,
+                     "current_state" : user_data_obj.session_data.get('current_state')
+                 }})
 
-            state = create_package_data(company_data_obj)
-        else:
-            user_data_obj.session_data['current_state'] = 'declined'
-
-
-        user_data_obj.save()
-
-        #Return eligibility_point as well as the state
-        return Response((eligibility_point, state))
+        # If the user is declined then send status as "nok"
+        # user_data_obj.session_data['current_state'] = 'declined'
+        # user_data_obj.save()
+        return Response({
+            "status" : "nok",
+            "user" : {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+        })
 
 
 
