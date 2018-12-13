@@ -52,9 +52,9 @@ class GetAndSetPlans(APIView):
         response_data["amount"] = package_data[0].amount
         response_data["user_id"] = package_data[0].user_id
         response_data["id"] = package_data[0].id
-        # response_data["amount"] = package_data.amount
 
-        return Response(("Worked", response_data))
+
+        return Response(("Packages_for_Customer", response_data))
 
 
 

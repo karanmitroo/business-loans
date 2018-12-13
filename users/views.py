@@ -32,6 +32,7 @@ class Register(APIView):
 
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
+
     @classmethod
     def post(cls, request):
         """ Will be called when a user tries to register to the platform """
@@ -132,6 +133,30 @@ class Eligibility(APIView):
     """ To check if a user is eligibile or not for the loan """
 
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+
+
+    @classmethod
+    def get(cls, request):
+        """ This will help get the details of the user that were used for eligibility check
+        in case he comes back """
+
+        request_data = request.data
+        company_data_obj = CompanyData.objects.get(business=user_obj)
+
+        company_data = {}
+        company_data["year_of_registration"] = company_data_obj.year_of_registration
+        company_data["revenue"] = company_data_obj.revenue
+        company_data["amount_requested"] = company_data_obj.amount_requested
+        company_data["company_name"] = company_data_obj.company_name
+
+
+        return Response(("Business Details", company_data))
+
+
+
+
+
 
     @classmethod
     def post(cls, request):
