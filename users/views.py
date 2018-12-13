@@ -97,7 +97,7 @@ class Register(APIView):
             revenue=anon_data.data['revenue'],
             amount_requested=anon_data.data['amount_requested'],
             date_of_registration=timezone.datetime(
-                year=int(anon_data.data['year_of_registration']),
+                year=int(anon_data.data['year_of_registration'].split('-')[0]),
                 month=1,
                 day=1)
             )
