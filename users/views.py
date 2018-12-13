@@ -180,10 +180,10 @@ class Eligibility(APIView):
         # Matching this uuid will get us the user for which the data was collected.
         uuid_generated = uuid.uuid4()
         anon_data = {
-            "year_of_registration" : request_data.get('year_of_registration'),
+            "year_of_registration" : request_data.get('dateOfRegistration'),
             "revenue" : request_data.get('revenue'),
-            "amount_requested": request_data.get('amount_requested'),
-            "company_name": request_data.get('company_name')
+            "amount_requested": request_data.get('amountRequested'),
+            "company_name": request_data.get('companyName')
         }
 
         anon_data_obj = AnonData.objects.create(identifier=uuid_generated, data=anon_data)
@@ -191,9 +191,9 @@ class Eligibility(APIView):
         # Checking the eligibility of the user, depending on the params used in the method below.
         sequential_match_obj = SequentialMatch(os.path.join(
             settings.BASE_DIR, 'utils', 'eligibility_decision_table.csv'), {
-                "age" : timezone.now().year - int(request_data.get('year_of_registration')),
+                "age" : timezone.now().year - int(request_data.get('dateOfRegistration').split('-')[0]),
                 "revenue" : request_data.get('revenue'),
-                "amount requested": request_data.get('amount_requested')
+                "amount requested": request_data.get('amountRequested')
             })
 
         # This is a pandas dataframe object and can be played with however required.
@@ -209,7 +209,8 @@ class Eligibility(APIView):
 
             return Response({
                 "status" : "ok",
-                "uuid" : uuid_generated
+                "uuid" : uuid_generated,
+                "next_state" : "register"
             })
 
         # If not eligible then decline and save the status to anonymous data.
@@ -217,7 +218,8 @@ class Eligibility(APIView):
         anon_data_obj.save()
 
         return Response({
-            "status" : "declined",
+            "status" : "nok",
+            "next_state" : "declined"
         })
 
 class GetUser(APIView):
