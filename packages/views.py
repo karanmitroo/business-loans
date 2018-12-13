@@ -44,26 +44,32 @@ class GetAndSetPlans(APIView):
         company_data_obj = CompanyData.objects.get(business=user_obj)
         package_data = Packages.objects.filter(user=company_data_obj.business)
 
-
+        print("HERE")
         response_data = {}
-        response_data["rates"] = {}
-
         response_data["amount"] = package_data[0].amount
         response_data["user_id"] = package_data[0].user_id
+        print("response rates",response_data)
 
+        response_data["locked"] = Packages.objects.filter(user=user_obj, selected=True).exists()
+
+        print("Here")
+
+        print(response_data)
         amount = response_data["amount"]*100000
-
-
+        response_data["packages"] = []
         for each_data in package_data:
+            package_field = {}
             rate_field = int(each_data.rate)*1.0/1200.0
             months = each_data.tenure_years*12
             emi_amount = round(-1*np.pmt(rate_field, months, amount))
-            response_data[each_data.id]={}
-            response_data[each_data.id]["years"] = each_data.tenure_years
-            response_data[each_data.id]["rate"] = each_data.rate
-            response_data[each_data.id]["emi"] = emi_amount
+            package_field["years"] = each_data.tenure_years
+            package_field["rate"] = each_data.rate
+            package_field["emi"] = emi_amount
+            package_field["selected"] = each_data.selected
+            package_field["id"] = each_data.id
+            response_data["packages"].append(package_field)
 
-        return Response(("Packages_for_Customer", response_data))
+        return Response(response_data)
 
 
 
@@ -77,11 +83,11 @@ class GetAndSetPlans(APIView):
         # Packages.object.filter(user=user_obj).update(selected=False)
         Packages.objects.filter(user=user_obj).update(selected=False)
 
+
         package_data = Packages.objects.get(user=user_obj, id=request_data.get('id'))
         package_data.selected = True
         package_data.save()
 
 
-
-
-        return Response("Saved package")
+        return Response({"status":"ok",
+                         "selected_package_id":request_data.get('id')})
