@@ -24,6 +24,8 @@ def create_package_data(company_data_obj):
     for year, rate in sequential_result.to_dict().items():
         interest_rates_dict[int(year)] = float(list(rate.values())[0])
 
+    print ("Interest Rates", interest_rates_dict)
+    
     #Delete packages for the business in case it already exists
     Packages.objects.filter(user=company_data_obj.business).delete()
 

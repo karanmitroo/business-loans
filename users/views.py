@@ -88,7 +88,7 @@ class Register(APIView):
         anon_data = AnonData.objects.get(identifier=identifier)
 
         # Save username from the previously fetched company name
-        user_obj.username = anon_data.data['company_name']
+        user_obj.first_name = anon_data.data['company_name']
         user_obj.save()
 
         # Saving the fetched anonymous data to data of a known user.
@@ -289,6 +289,7 @@ class GetIndepthDetails(APIView):
         #To be replaced with an api call that will send the location details
         #and get whether it is in a urban, semi-urban or rural neighbourhood in return
         location_option = choice(LOCATION)
+
         print ("things choosen")
 
 
@@ -313,8 +314,9 @@ class GetIndepthDetails(APIView):
 
 
         #Call the function that will calculate and create the package data based on loan eligibility
+        user_data_obj = UserData.objects.get(user=user_obj)
         if eligibility_point != 0:
-            user_data_obj = UserData.objects.get(user=user_obj)
+
             user_data_obj.session_data['current_state'] = 'choose_package'
             user_data_obj.save()
             create_package_data(company_data_obj)
@@ -325,17 +327,18 @@ class GetIndepthDetails(APIView):
                      "username" : user_obj.username,
                      "current_state" : user_data_obj.session_data.get('current_state')
                  }})
-
+        print ("Going to else to send response")
         # If the user is declined then send status as "nok"
-        user_data_obj.session_data['current_state'] = 'declined'
-        user_data_obj.save()
-        return Response(
-            {"status" : "nok",
-             "user" : {
-                 "status" : "ok",
-                 "username" : user_obj.username,
-                 "current_state" : user_data_obj.session_data.get('current_state')
-             }})
+        # user_data_obj.session_data['current_state'] = 'declined'
+        # user_data_obj.save()
+        return Response({
+            "status" : "nok",
+            "user" : {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+        })
 
 
 
