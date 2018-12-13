@@ -31,7 +31,7 @@ def create_package_data(company_data_obj):
     for years, rate in interest_rates_dict.items():
         if rate != "NA":
             _ = Packages.objects.create(amount=int(company_data_obj.amount_requested),
-                                        tenure_months=int(years), rate=float(rate),
+                                        tenure_years=int(years), rate=float(rate),
                                         selected=False,
                                         user=company_data_obj.business)
 
