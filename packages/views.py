@@ -83,11 +83,11 @@ class GetAndSetPlans(APIView):
         # Packages.object.filter(user=user_obj).update(selected=False)
         Packages.objects.filter(user=user_obj).update(selected=False)
 
+
         package_data = Packages.objects.get(user=user_obj, id=request_data.get('id'))
         package_data.selected = True
         package_data.save()
 
 
-
-
-        return Response("Saved package")
+        return Response({"status":"ok",
+                         "selected_package_id":request_data.get('id')})
