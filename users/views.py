@@ -38,13 +38,14 @@ class Register(APIView):
         """ Will be called when a user tries to register to the platform """
         password = request.data.get('password')
         email = request.data.get('email')
+        username = request.data.get('username')
 
         # Check if any other user with the same username or email does NOT already exists.
         if User.objects.filter(Q(username=username) | Q(email=email)).exists():
             # If the user already exists, then ask them to login rather registering.
             return Response({
                 "status" : "nok",
-                "response" : "User Already Exists"
+                "response" : "This username/ email is already registered with the system. Kindly login to proceed further with your application."
             })
 
         # Else register and signin the user.
@@ -58,18 +59,25 @@ class Register(APIView):
         login(request, authenticated_user)
 
         # Also create the other models required further.
-        cls.create_userdata(authenticated_user)
+        user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
+        cls.create_userdata(user_data_obj)
 
         # Add any anonymous data to this actual users data
         cls.add_anon_data_to_userdata(request.data.get('uuid'), user_obj)
 
-        return Response("Thanks for logging in")
+        return Response({
+            "status" : "ok",
+            "user" : {
+                "status" : "ok",
+                "username" : user_obj.username,
+                "current_state" : user_data_obj.session_data.get('current_state')
+            }
+        })
 
 
     @classmethod
-    def create_userdata(cls, user_obj):
+    def create_userdata(cls, user_data_obj):
         """ To create a userdata object as and when a new user registers to the platform. """
-        user_data_obj, _ = UserData.objects.get_or_create(user=user_obj)
         user_data_obj.session_data['current_state'] = 'indepth_details'
         user_data_obj.save()
 
