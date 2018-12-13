@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 
 import uuid
 from random import randint, choice
@@ -44,15 +44,24 @@ class GetAndSetPlans(APIView):
         company_data_obj = CompanyData.objects.get(business=user_obj)
         package_data = Packages.objects.filter(user=company_data_obj.business)
 
+
         response_data = {}
         response_data["rates"] = {}
 
-        for each_data in package_data:
-            response_data["rates"][each_data.tenure_months] = each_data.rate
         response_data["amount"] = package_data[0].amount
         response_data["user_id"] = package_data[0].user_id
-        response_data["id"] = package_data[0].id
 
+        amount = response_data["amount"]*100000
+
+
+        for each_data in package_data:
+            rate_field = int(each_data.rate)*1.0/1200.0
+            months = each_data.tenure_years*12
+            emi_amount = round(-1*np.pmt(rate_field, months, amount))
+            response_data[each_data.id]={}
+            response_data[each_data.id]["years"] = each_data.tenure_years
+            response_data[each_data.id]["rate"] = each_data.rate
+            response_data[each_data.id]["emi"] = emi_amount
 
         return Response(("Packages_for_Customer", response_data))
 
