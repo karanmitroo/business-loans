@@ -55,7 +55,7 @@ class GetAndSetPlans(APIView):
         print("Here")
 
         print(response_data)
-        amount = response_data["amount"]*100000
+        amount = response_data["amount"]
         response_data["packages"] = []
         for each_data in package_data:
             package_field = {}
