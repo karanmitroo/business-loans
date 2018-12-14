@@ -90,4 +90,9 @@ class GetAndSetPlans(APIView):
 
 
         return Response({"status":"ok",
-                         "selected_package_id":request_data.get('id')})
+                         "selected_package_id":request_data.get('id'),
+                         "user" : {
+                            "status" : "ok",
+                            "username" : user_obj.username,
+                            "current_state" : "user_dashboard"
+                         }})
