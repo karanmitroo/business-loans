@@ -169,7 +169,7 @@ class Eligibility(APIView):
         company_data_obj = CompanyData.objects.get(business=user_obj)
 
         company_data = {}
-        company_data["date_of_registration"] = company_data_obj.date_of_registration
+        company_data["date_of_registration"] = str(company_data_obj.date_of_registration.date())
         company_data["revenue"] = company_data_obj.revenue
         company_data["amount_requested"] = company_data_obj.amount_requested
         company_data["company_name"] = company_data_obj.business.username
