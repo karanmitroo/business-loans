@@ -161,7 +161,11 @@ class Eligibility(APIView):
         """ This will help get the details of the user that were used for eligibility check
         in case he comes back """
 
-        request_data = request.data
+        user_obj = request.user
+        print (user_obj.is_authenticated)
+        if not user_obj.is_authenticated:
+            return Response({"locked" : False})
+
         company_data_obj = CompanyData.objects.get(business=user_obj)
 
         company_data = {}
@@ -169,9 +173,9 @@ class Eligibility(APIView):
         company_data["revenue"] = company_data_obj.revenue
         company_data["amount_requested"] = company_data_obj.amount_requested
         company_data["company_name"] = company_data_obj.company_name
+        company_data['locked'] = True
 
-
-        return Response(("Business Details", company_data))
+        return Response(company_data)
 
 
 

@@ -42,7 +42,7 @@ class GetAndSetPlans(APIView):
         user_obj = request.user
 
         company_data_obj = CompanyData.objects.get(business=user_obj)
-        package_data = Packages.objects.filter(user=company_data_obj.business)
+        package_data = Packages.objects.filter(user=company_data_obj.business).order_by('tenure_years')
 
         print("HERE")
         response_data = {}
