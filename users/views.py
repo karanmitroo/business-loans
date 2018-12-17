@@ -169,10 +169,10 @@ class Eligibility(APIView):
         company_data_obj = CompanyData.objects.get(business=user_obj)
 
         company_data = {}
-        company_data["year_of_registration"] = company_data_obj.year_of_registration
+        company_data["date_of_registration"] = company_data_obj.date_of_registration
         company_data["revenue"] = company_data_obj.revenue
         company_data["amount_requested"] = company_data_obj.amount_requested
-        company_data["company_name"] = company_data_obj.company_name
+        company_data["company_name"] = company_data_obj.business.username
         company_data['locked'] = True
 
         return Response(company_data)
@@ -371,12 +371,15 @@ class GetIndepthDetails(APIView):
         user_obj = request.user
 
         indepth_data = {}
-
+        print ("Company data to be fetched", user_obj)
         company_data_obj = CompanyData.objects.get(business=user_obj)
+
+        print ("CompanyData obj found", company_data_obj)
 
         if (company_data_obj.tax_reg_no != '' and
                 company_data_obj.sector != '' and
                 company_data_obj.address != ''):
+            print ("some data was missing")
             indepth_data["tax_reg_no"] = company_data_obj.tax_reg_no
             indepth_data["sector"] = company_data_obj.sector
             indepth_data["address"] = company_data_obj.address

@@ -38,7 +38,7 @@ class CompanyData(models.Model):
         (Med, settings.SECTORS[3]),
         (Infra, settings.SECTORS[4]),
         (Oth, settings.SECTORS[5]))
-    sector = models.CharField(max_length=15, choices=SECTOR_CHOICES, default=Oth)
+    sector = models.CharField(max_length=25, choices=SECTOR_CHOICES, default=Oth)
 
 class AnonData(models.Model):
     identifier = models.TextField(unique=True)
