@@ -25,6 +25,9 @@ SECRET_KEY = '1=@41w%l9ivtbdqb6nuz&!$(z_6q5bnw5z1m319gyg4cl4qp$3'
 # SECURITY WARNING: don't run with debug turned on in production!
 DJANGO_ENVIRONMENT = os.environ.get('DJANGO_ENVIRONMENT', None)
 
+if not DJANGO_ENVIRONMENT:
+    raise BaseException("DJANGO_ENVIRONMENT Not Defined")
+
 DEBUG = DJANGO_ENVIRONMENT == 'DEV'
 
 ALLOWED_HOSTS = ['*']
@@ -85,12 +88,25 @@ WSGI_APPLICATION = 'business_loans.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'business_loans',
+if DJANGO_ENVIRONMENT == 'DEV':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'business_loans',
+        }
     }
-}
+
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'businessloans',
+            'USER': 'testbusinessloans',
+            'PASSWORD' : '*HelloWorld*',
+            'HOST': 'businessloans.ctfuc9vdgala.ap-south-1.rds.amazonaws.com',
+            'PORT': '5432'
+            }
+        }
 
 
 # Password validation
