@@ -91,11 +91,8 @@ class GetAndSetPlans(APIView):
         user_data_obj = UserData.objects.get(user=user_obj)
         user_data_obj.session_data['current_state'] = 'user_dashboard'
         user_data_obj.save()
-        
+
         return Response({"status":"ok",
                          "selected_package_id":request_data.get('id'),
-                         "user" : {
-                            "status" : "ok",
-                            "username" : user_obj.username,
-                            "current_state" : user_data_obj.session_data['current_state']
-                         }})
+                         "current_state" : user_data_obj.session_data['current_state']
+                         })

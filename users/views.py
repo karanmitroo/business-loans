@@ -67,8 +67,8 @@ class Register(APIView):
             "user" : {
                 "status" : "ok",
                 "username" : user_obj.username,
-                "current_state" : user_data_obj.session_data.get('current_state')
-            }
+            },
+            "current_state" : user_data_obj.session_data.get('current_state')
         })
 
 
@@ -125,8 +125,11 @@ class Login(APIView):
             # Login the user and send the current state where the user is present.
             return Response({
                 "status" : "ok",
-                "current_state" : user_data_obj.session_data['current_state'],
-                "username" : user_obj.username
+                "user" : {
+                    "status" : "ok",
+                    "username" : user_obj.username
+                },
+                "current_state" : user_data_obj.session_data['current_state']
             })
 
         return Response({
@@ -344,19 +347,16 @@ class GetIndepthDetails(APIView):
                  "user" : {
                      "status" : "ok",
                      "username" : user_obj.username,
-                     "current_state" : user_data_obj.session_data.get('current_state')
-                 }})
+                 },
+                 "current_state" : user_data_obj.session_data.get('current_state')
+                 })
 
         # If the user is declined then send status as "nok"
         # user_data_obj.session_data['current_state'] = 'declined'
         # user_data_obj.save()
         return Response({
             "status" : "nok",
-            "user" : {
-                "status" : "ok",
-                "username" : user_obj.username,
-                "current_state" : user_data_obj.session_data.get('current_state')
-            }
+            "current_state" : user_data_obj.session_data.get('current_state')
         })
 
 
